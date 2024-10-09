@@ -24,9 +24,6 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 
-export const description =
-    "A simple login form with email and password. The submit button says 'Sign in'.";
-
 export default function LoginForm() {
     const form = useForm<z.infer<typeof signInSchema>>({
         resolver: zodResolver(signInSchema),

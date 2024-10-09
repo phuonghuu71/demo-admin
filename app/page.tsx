@@ -1,13 +1,10 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "./api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/authOptions";
 
 import { columns } from "@/lib/column";
 import { DataTable } from "@/components/ui/data-table";
 import { fetchData } from "@/lib/fetch";
 import HomeLayout from "@/components/home-layout";
-
-export const description =
-    "A products dashboard with a sidebar navigation and a main content area. The dashboard has a header with a search input and a user menu. The sidebar has a logo, navigation links, and a card with a call to action. The main content area shows an empty state with a call to action.";
 
 export default async function Dashboard() {
     const session = await getServerSession(authOptions);
