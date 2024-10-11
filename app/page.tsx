@@ -8,6 +8,7 @@ import HomeLayout from "@/components/home-layout";
 
 export default async function Dashboard() {
     const session = await getServerSession(authOptions);
+
     const data = await fetchData(session?.user.accessToken);
 
     return (

@@ -5,7 +5,8 @@ declare module "next-auth" {
      */
     interface User {
         accessToken: string;
-        expires: string;
+        refreshToken: string;
+        expires: number;
     }
     interface Session {
         user: {
@@ -17,7 +18,8 @@ declare module "next-auth" {
 
 declare module "next-auth/jwt" {
     interface JWT {
-        expires: string;
+        expires: number;
+        refreshToken: string;
         accessToken: string;
     }
 }
