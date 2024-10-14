@@ -12,7 +12,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { signInSchema } from "@/lib/zod";
 import { z } from "zod";
-import { handleServiceNowSignIn } from "../actions/authActions";
+import {
+    handleServiceNowSignIn,
+    handleServiceNowSignInOauth,
+} from "../actions/authActions";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -90,9 +93,20 @@ export default function LoginForm() {
                         />
                     </CardContent>
                     <CardFooter>
-                        <Button className="w-full">Sign in</Button>
+                        <Button className="w-full">
+                            Sign in with Credentials
+                        </Button>
                     </CardFooter>
                 </form>
+                <CardFooter className="flex justify-center flex-col gap-4">
+                    <p>Or</p>
+                    <Button
+                        className="w-full"
+                        onClick={handleServiceNowSignInOauth}
+                    >
+                        Sign in with ServiceNow OAuth
+                    </Button>
+                </CardFooter>
             </Form>
         </Card>
     );

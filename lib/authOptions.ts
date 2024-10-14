@@ -2,6 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import axios from "axios";
 import { JWT } from "next-auth/jwt";
+import { CallbackParamsType } from "openid-client";
 
 interface ServiceNowUser {
     sys_id: string;
@@ -48,6 +49,31 @@ async function refreshAccessToken(token: JWT) {
             error: "RefreshAccessTokenError",
         };
     }
+}
+
+async function fetchAccessToken(params: CallbackParamsType) {
+    const { code } = params;
+    const url = `${process.env.SERVICENOW_URL}/oauth_token.do`;
+    const paramsUrl = new URLSearchParams();
+    paramsUrl.append("grant_type", "authorization_code");
+    paramsUrl.append(
+        "redirect_uri",
+        `${process.env.NEXTAUTH_URL}/api/auth/callback/servicenow_oauth2`
+    );
+    paramsUrl.append("client_id", process.env.SERVICENOW_CLIENT_ID || "");
+    paramsUrl.append(
+        "client_secret",
+        process.env.SERVICENOW_CLIENT_SECRET || ""
+    );
+    paramsUrl.append("code", code || "");
+
+    const response = await axios.post(url, paramsUrl.toString(), {
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+    });
+
+    return response.data;
 }
 
 export const authOptions: NextAuthOptions = {
@@ -114,18 +140,58 @@ export const authOptions: NextAuthOptions = {
                 }
             },
         }),
+        {
+            id: "servicenow_oauth2",
+            name: "ServiceNow",
+            type: "oauth",
+            version: "2.0",
+            authorization: {
+                url: `${process.env.SERVICENOW_URL}/oauth_auth.do`,
+                params: {
+                    grant_type: "authorization_code",
+                    response_type: "code",
+                    client_id: process.env.SERVICENOW_CLIENT_ID,
+                    redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/callback/servicenow_oauth2`,
+                },
+            },
+            token: {
+                url: `${process.env.SERVICENOW_URL}/oauth_token.do`,
+                async request({ params }) {
+                    // context contains useful properties to help you make the request.
+                    const tokens = await fetchAccessToken(params);
+                    return { tokens };
+                },
+            },
+            userinfo: `${process.env.SERVICENOW_URL}/api/now/table/sys_user?sysparm_query=sys_id=javascript:gs.getUserID()`,
+            client: {
+                client_id: process.env.SERVICENOW_CLIENT_ID,
+                client_secret: process.env.SERVICENOW_CLIENT_SECRET,
+            },
+            profile(profile) {
+                profile.id = profile.result[0].sys_id;
+                return profile;
+            },
+        },
     ],
     secret: process.env.NEXTAUTH_SECRET,
     session: {
         strategy: "jwt",
     },
     callbacks: {
-        async jwt({ token, user }) {
-            if (user) {
-                token.expires = user.expires;
-                token.accessToken = user.accessToken;
-                token.refreshToken = user.refreshToken;
+        async jwt({ token, account, user }) {
+            switch (account?.provider) {
+                case "servicenow":
+                    token.expires = user.expires;
+                    token.accessToken = user.accessToken;
+                    token.refreshToken = user.refreshToken;
+                    break;
+                case "servicenow_oauth2":
+                    token.accessToken = account.access_token || "";
+                    token.refreshToken = account.refresh_token || "";
+                    token.expires = account.expires_at || 0;
+                    break;
             }
+
             if (Date.now() < token.expires) return token;
             return refreshAccessToken(token);
         },

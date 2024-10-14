@@ -23,6 +23,22 @@ export async function handleServiceNowSignIn({
     }
 }
 
+export async function handleServiceNowSignInOauth() {
+    try {
+        await signIn("servicenow_oauth2");
+    } catch (error) {
+        if (error instanceof AuthError) {
+            switch (error) {
+                default:
+                    return {
+                        message: "Something went wrong.",
+                    };
+            }
+        }
+        throw error;
+    }
+}
+
 export async function handleSignOut() {
     await signOut();
 }
